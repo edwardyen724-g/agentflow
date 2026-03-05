@@ -10,17 +10,27 @@ const SignupPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  const isPasswordStrong = (password: string): boolean => {
+    return password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /[0-9]/.test(password);
+  };
+
   const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    
+
+    if (!isPasswordStrong(password)) {
+      setError('Password must be at least 8 characters long and include uppercase letters, lowercase letters, and numbers.');
+      setLoading(false);
+      return;
+    }
+
     try {
       const auth: Auth = firebase.auth();
       await auth.createUserWithEmailAndPassword(email, password);
       router.push('/dashboard'); // Redirect to dashboard after signup
     } catch (err) {
-      setError(err.message);
+      setError('An error occurred during signup. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -33,9 +43,7 @@ const SignupPage: React.FC = () => {
         {error && <p className="text-red-500 text-center mb-4">{error}</p>}
         <form onSubmit={handleSignup}>
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-1" htmlFor="email">
-              Email
-            </label>
+            <label className="block text-sm font-medium mb-1" htmlFor="email">Email</label>
             <input
               className="w-full p-2 border border-gray-300 rounded"
               type="email"
@@ -46,9 +54,7 @@ const SignupPage: React.FC = () => {
             />
           </div>
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-1" htmlFor="password">
-              Password
-            </label>
+            <label className="block text-sm font-medium mb-1" htmlFor="password">Password</label>
             <input
               className="w-full p-2 border border-gray-300 rounded"
               type="password"
@@ -58,20 +64,8 @@ const SignupPage: React.FC = () => {
               required
             />
           </div>
-          <button
-            type="submit"
-            className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition"
-            disabled={loading}
-          >
-            {loading ? 'Signing Up...' : 'Sign Up'}
-          </button>
+          <button type="submit" className="w-full bg-blue-500 text-white p-2 rounded-md">{loading ? 'Loading...' : 'Sign Up'}</button>
         </form>
-        <p className="mt-4 text-center text-sm">
-          Already have an account?{' '}
-          <a href="/login" className="text-blue-500 hover:underline">
-            Log in
-          </a>
-        </p>
       </div>
     </div>
   );
