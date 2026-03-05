@@ -1,36 +1,49 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import rateLimit from 'express-rate-limit';
-import firebaseApp from '../../../lib/firebase';
+import type { NextApiRequest, NextApiResponse } from "next";
+import * as admin from "firebase-admin";
+import db from "../../../lib/firestore";
 
-const auth = getAuth(firebaseApp);
+void db; // ensures firebase-admin is initialised
 
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
-  message: 'Too many requests, please try again later.',
-});
+// Simple in-memory rate limiter (resets on cold start — good enough for a micro-SaaS)
+const attempts = new Map<string, { count: number; resetAt: number }>();
+const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const MAX_ATTEMPTS = 10;
 
-export default async function login(req: NextApiRequest, res: NextApiResponse) {
-  limiter(req, res, async () => {
-    if (req.method !== 'POST') {
-      return res.status(405).json({ message: 'Method Not Allowed' });
-    }
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const record = attempts.get(ip);
+  if (!record || now > record.resetAt) {
+    attempts.set(ip, { count: 1, resetAt: now + WINDOW_MS });
+    return true;
+  }
+  if (record.count >= MAX_ATTEMPTS) return false;
+  record.count++;
+  return true;
+}
 
-    const { email, password } = req.body;
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ message: "Method Not Allowed" });
+  }
 
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required' });
-    }
+  const ip = (req.headers["x-forwarded-for"] as string) ?? req.socket.remoteAddress ?? "unknown";
+  if (!checkRateLimit(ip)) {
+    return res.status(429).json({ message: "Too many login attempts. Please try again later." });
+  }
 
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+  const { idToken } = req.body as { idToken?: string };
 
-      return res.status(200).json({ uid: user.uid, email: user.email });
-    } catch (error) {
-      console.error('Login error:', error);
-      return res.status(401).json({ message: 'Login failed. Check your credentials and try again.', error: error.message });
-    }
-  });
+  if (!idToken) {
+    return res.status(400).json({ message: "idToken is required" });
+  }
+
+  try {
+    // Client signs in with Firebase client SDK, sends the ID token here for verification
+    const decoded = await admin.auth().verifyIdToken(idToken);
+    return res.status(200).json({ uid: decoded.uid, email: decoded.email });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Login failed";
+    console.error("Login verification error:", message);
+    return res.status(401).json({ message: "Invalid or expired token." });
+  }
 }
