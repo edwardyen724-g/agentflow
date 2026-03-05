@@ -7,19 +7,6 @@ import 'firebase/auth';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-};
-
-if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
-}
-
 const LoginPage = () => {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -33,7 +20,7 @@ const LoginPage = () => {
       await firebase.auth().signInWithEmailAndPassword(email, password);
       router.push('/dashboard');
     } catch (error) {
-      toast.error(error.message);
+      toast.error('An error occurred during login. Please check your credentials and try again.');
     } finally {
       setLoading(false);
     }
@@ -69,9 +56,9 @@ const LoginPage = () => {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700 transition ${loading ? 'opacity-50' : ''}`}
+            className="w-full bg-blue-500 text-white p-2 rounded-md disabled:bg-gray-400"
           >
-            {loading ? 'Logging in...' : 'Login'}
+            {loading ? 'Loading...' : 'Login'}
           </button>
         </form>
         <ToastContainer />
