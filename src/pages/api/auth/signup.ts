@@ -1,43 +1,43 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { getAuth, initializeApp } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import type { NextApiRequest, NextApiResponse } from "next";
+import * as admin from "firebase-admin";
+import db from "../../../lib/firestore";
 
-const firebaseConfig = {
-  apiKey: process.env.FIREBASE_API_KEY,
-  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.FIREBASE_PROJECT_ID,
-  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.FIREBASE_APP_ID,
-};
+// Ensure admin is initialised (lib/firestore.ts handles this as a side-effect)
+void db;
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+function isPasswordStrong(password: string): boolean {
+  return (
+    password.length >= 8 &&
+    /[A-Z]/.test(password) &&
+    /[a-z]/.test(password) &&
+    /[0-9]/.test(password)
+  );
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { email, password } = req.body;
+  const { email, password } = req.body as { email?: string; password?: string };
 
   if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password are required' });
+    return res.status(400).json({ error: "Email and password are required" });
   }
 
-  const isPasswordStrong = (password: string): boolean => {
-    return password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /[0-9]/.test(password);
-  };
-
   if (!isPasswordStrong(password)) {
-    return res.status(400).json({ error: 'Password must be at least 8 characters long and include uppercase letters, lowercase letters, and numbers.' });
+    return res.status(400).json({
+      error: "Password must be at least 8 characters and include uppercase, lowercase, and numbers.",
+    });
   }
 
   try {
-    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-    return res.status(201).json({ message: 'User created successfully', uid: userCredential.user.uid });
-  } catch (error) {
-    console.error('Signup error:', error);
-    return res.status(500).json({ error: 'An error occurred during signup. Please check your credentials and try again.' });
+    const user = await admin.auth().createUser({ email, password });
+    return res.status(201).json({ message: "User created successfully", uid: user.uid });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Signup failed";
+    console.error("Signup error:", message);
+    // Don't leak internal error details to the client
+    return res.status(500).json({ error: "An error occurred during signup. Please try again." });
   }
 }
