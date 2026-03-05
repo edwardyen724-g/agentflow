@@ -1,68 +1,98 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import { getAuth } from 'firebase-admin/auth';
-import db from '../../../lib/firestore';
-import { Workflow } from '../../../types';
+import { NextApiRequest, NextApiResponse } from "next";
+import * as admin from "firebase-admin";
+import db from "../../../lib/firestore";
+import type { Workflow } from "../../../types";
 
 const firestore = db.firestore();
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { method } = req;
+interface AuthedRequest extends NextApiRequest {
+  userId?: string;
+}
 
-  // Authentication check
-  const token = req.headers.authorization?.split(' ')[1];
+export default async function handler(req: AuthedRequest, res: NextApiResponse) {
+  const token = req.headers.authorization?.split(" ")[1];
   if (!token) {
-    return res.status(401).json({ error: 'Unauthorized access' });
-  }
-  try {
-    const decodedToken = await getAuth().verifyIdToken(token);
-    req.userId = decodedToken.uid;
-  } catch (error) {
-    return res.status(401).json({ error: 'Unauthorized access' });
+    return res.status(401).json({ error: "Unauthorized" });
   }
 
-  switch (method) {
-    case 'GET':
-      await getWorkflows(req, res);
-      break;
-    case 'POST':
-      await createWorkflow(req, res);
-      break;
-    case 'PUT':
-      await updateWorkflow(req, res);
-      break;
-    case 'DELETE':
-      await deleteWorkflow(req, res);
-      break;
+  try {
+    const decoded = await admin.auth().verifyIdToken(token);
+    req.userId = decoded.uid;
+  } catch {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  switch (req.method) {
+    case "GET":
+      return getWorkflows(req, res);
+    case "POST":
+      return createWorkflow(req, res);
+    case "PUT":
+      return updateWorkflow(req, res);
+    case "DELETE":
+      return deleteWorkflow(req, res);
     default:
-      res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE']);
-      res.status(405).end(`Method ${method} Not Allowed`);
+      res.setHeader("Allow", ["GET", "POST", "PUT", "DELETE"]);
+      return res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }
 
-async function getWorkflows(req: NextApiRequest, res: NextApiResponse) {
-  const userId = req.userId;
-
+async function getWorkflows(req: AuthedRequest, res: NextApiResponse) {
   try {
-    const snapshot = await firestore.collection('workflows').where('userId', '==', userId).get();
-    const workflows: Workflow[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Workflow[];
-    res.status(200).json(workflows);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch workflows: ' + error.message });
+    const snapshot = await firestore
+      .collection("workflows")
+      .where("userId", "==", req.userId)
+      .get();
+    const workflows: Workflow[] = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...(doc.data() as Omit<Workflow, "id">),
+    }));
+    return res.status(200).json(workflows);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return res.status(500).json({ error: `Failed to fetch workflows: ${message}` });
   }
 }
 
-async function createWorkflow(req: NextApiRequest, res: NextApiResponse) {
-  const { userId, name, steps } = req.body;
+async function createWorkflow(req: AuthedRequest, res: NextApiResponse) {
+  const { name, steps } = req.body as { name?: string; steps?: unknown[] };
 
-  if (!userId || !name || !steps) {
-    return res.status(400).json({ error: 'Missing required fields' });
+  if (!name || !steps) {
+    return res.status(400).json({ error: "Missing required fields: name, steps" });
   }
 
   try {
-    const newWorkflow = { userId, name, steps, createdAt: new Date() };
-    // ... (process to add workflow goes here)
-    res.status(201).json({ message: 'Workflow created successfully.' });
-  } catch (error) {
-    return res.status(500).json({ error: 'Failed to create workflow: ' + error.message });
+    const newWorkflow = { userId: req.userId, name, steps, createdAt: new Date() };
+    const ref = await firestore.collection("workflows").add(newWorkflow);
+    return res.status(201).json({ id: ref.id, message: "Workflow created successfully." });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return res.status(500).json({ error: `Failed to create workflow: ${message}` });
+  }
+}
+
+async function updateWorkflow(req: AuthedRequest, res: NextApiResponse) {
+  const { id, ...updates } = req.body as { id?: string };
+  if (!id) return res.status(400).json({ error: "Workflow id is required" });
+
+  try {
+    await firestore.collection("workflows").doc(id).update(updates);
+    return res.status(200).json({ message: "Workflow updated." });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return res.status(500).json({ error: `Failed to update workflow: ${message}` });
+  }
+}
+
+async function deleteWorkflow(req: AuthedRequest, res: NextApiResponse) {
+  const { id } = req.query as { id?: string };
+  if (!id) return res.status(400).json({ error: "Workflow id is required" });
+
+  try {
+    await firestore.collection("workflows").doc(id).delete();
+    return res.status(200).json({ message: "Workflow deleted." });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return res.status(500).json({ error: `Failed to delete workflow: ${message}` });
   }
 }
