@@ -2,8 +2,8 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import * as admin from "firebase-admin";
 import db from "../../../lib/firestore";
 import validator from 'validator';
+import { NextCors } from 'nextjs-cors';
 
-// Ensure admin is initialised (lib/firestore.ts handles this as a side-effect)
 void db;
 
 function isPasswordStrong(password: string): boolean {
@@ -19,6 +19,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
+
+  await NextCors(req, res, {
+    methods: ['POST'],
+    origin: '*',
+    optionsSuccessStatus: 200,
+  });
 
   const { email, password } = req.body as { email?: string; password?: string };
 
@@ -40,9 +46,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const user = await admin.auth().createUser({ email, password });
     return res.status(201).json({ message: "User created successfully", uid: user.uid });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Signup failed";
-    console.error("Signup error:", message);
-    // Don't leak internal error details to the client
+    console.error("Signup error:", err);
     return res.status(500).json({ error: "An error occurred during signup. Please try again." });
   }
 }
