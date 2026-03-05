@@ -22,14 +22,6 @@ export default async function login(req: NextApiRequest, res: NextApiResponse) {
     return res.status(200).json({ uid: user.uid, email: user.email });
   } catch (error) {
     console.error('Login error:', error);
-    let errorMessage = 'An error occurred during login.';
-
-    if (error.code === 'auth/user-not-found') {
-      errorMessage = 'No user found with this email.';
-    } else if (error.code === 'auth/wrong-password') {
-      errorMessage = 'Incorrect password.';
-    }
-
-    return res.status(401).json({ message: errorMessage });
+    return res.status(401).json({ message: 'An error occurred during login. Please try again.' });
   }
 }
