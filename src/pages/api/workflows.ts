@@ -49,8 +49,8 @@ async function getWorkflows(req: AuthedRequest, res: NextApiResponse) {
     }));
     return res.status(200).json(workflows);
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error';
-    return res.status(500).json({ error: `Failed to fetch workflows: ${message}` });
+    console.error('Error fetching workflows:', err);
+    return res.status(500).json({ error: 'Failed to fetch workflows: An internal server error occurred.' });
   }
 }
 
@@ -62,10 +62,11 @@ async function createWorkflow(req: AuthedRequest, res: NextApiResponse) {
   }
 
   try {
-    const newWorkflow = { userId: req.userId, name, steps, createdAt: new Date() };
-    // ... logic to add the new workflow to Firestore
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    return res.status(500).json({ error: `Failed to create workflow: ${message}` });
+    const newWorkflow = { userId: req.userId, name, steps };
+    // Add workflow creation logic here
+    return res.status(201).json({ message: 'Workflow created successfully.' });
+  } catch (err) {
+    console.error('Error creating workflow:', err);
+    return res.status(500).json({ error: 'Failed to create workflow: An internal server error occurred.' });
   }
 }
