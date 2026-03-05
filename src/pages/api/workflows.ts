@@ -8,6 +8,18 @@ const firestore = db.firestore();
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { method } = req;
 
+  // Authentication check
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({ error: 'Unauthorized access' });
+  }
+  try {
+    const decodedToken = await getAuth().verifyIdToken(token);
+    req.userId = decodedToken.uid;
+  } catch (error) {
+    return res.status(401).json({ error: 'Unauthorized access' });
+  }
+
   switch (method) {
     case 'GET':
       await getWorkflows(req, res);
@@ -28,7 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 }
 
 async function getWorkflows(req: NextApiRequest, res: NextApiResponse) {
-  const userId = req.query.userId;
+  const userId = req.userId;
 
   try {
     const snapshot = await firestore.collection('workflows').where('userId', '==', userId).get();
@@ -61,25 +73,23 @@ async function updateWorkflow(req: NextApiRequest, res: NextApiResponse) {
   if (!id) {
     return res.status(400).json({ error: 'Workflow ID is required' });
   }
-
   try {
     await firestore.collection('workflows').doc(id).update(updateData);
-    res.status(204).end();
+    res.status(200).json({ message: 'Workflow updated successfully' });
   } catch (error) {
     res.status(500).json({ error: 'Failed to update workflow' });
   }
 }
 
 async function deleteWorkflow(req: NextApiRequest, res: NextApiResponse) {
-  const { id } = req.query;
+  const { id } = req.body;
 
   if (!id) {
     return res.status(400).json({ error: 'Workflow ID is required' });
   }
-
   try {
-    await firestore.collection('workflows').doc(id as string).delete();
-    res.status(204).end();
+    await firestore.collection('workflows').doc(id).delete();
+    res.status(200).json({ message: 'Workflow deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: 'Failed to delete workflow' });
   }
