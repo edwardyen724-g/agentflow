@@ -4,7 +4,7 @@ import db from "../../../lib/firestore";
 
 void db; // ensures firebase-admin is initialised
 
-// Simple in-memory rate limiter (resets on cold start — good enough for a micro-SaaS)
+// Simple in-memory rate limiter - could use Redis in production for persistency
 const attempts = new Map<string, { count: number; resetAt: number }>();
 const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 const MAX_ATTEMPTS = 10;
