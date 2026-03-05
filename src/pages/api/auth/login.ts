@@ -22,6 +22,6 @@ export default async function login(req: NextApiRequest, res: NextApiResponse) {
     return res.status(200).json({ uid: user.uid, email: user.email });
   } catch (error) {
     console.error('Login error:', error);
-    return res.status(401).json({ message: 'An error occurred during login. Please try again.' });
+    return res.status(401).json({ message: 'Login failed. Check your credentials and try again.', error: error.message });
   }
 }
