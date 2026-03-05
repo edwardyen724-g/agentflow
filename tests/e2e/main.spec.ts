@@ -1,132 +1,128 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('User Authentication', () => {
-    test('User can sign up and log in securely', async ({ page }) => {
-        // Navigate to signup page
-        await page.goto('http://localhost:3000/signup');
-        
-        // Fill and submit signup form
-        await page.fill('input[name="email"]', 'testuser@example.com');
-        await page.fill('input[name="password"]', 'securePassword123');
-        await page.click('button[type="submit"]');
-        
-        // Ensure user is redirected to dashboard
-        await expect(page).toHaveURL('http://localhost:3000/dashboard');
+  test('User can sign up and log in securely', async ({ page }) => {
+    // Navigate to signup page
+    await page.goto('http://localhost:3000/signup');
+    await page.fill('input[name="email"]', 'testuser@example.com');
+    await page.fill('input[name="password"]', 'SecurePassword123');
+    await page.click('button[type="submit"]');
+    
+    // Assert user is redirected to dashboard
+    await expect(page).toHaveURL('http://localhost:3000/dashboard');
+    
+    // Logout
+    await page.click('text=Logout');
+    
+    // Navigate to login page
+    await page.goto('http://localhost:3000/login');
+    await page.fill('input[name="email"]', 'testuser@example.com');
+    await page.fill('input[name="password"]', 'SecurePassword123');
+    await page.click('button[type="submit"]');
+    
+    // Assert user is redirected to dashboard
+    await expect(page).toHaveURL('http://localhost:3000/dashboard');
+  });
 
-        // Log out (if necessary, implement this based on your app)
-        await page.click('button#logout');
-
-        // Navigate to login page
-        await page.goto('http://localhost:3000/login');
-
-        // Fill and submit login form
-        await page.fill('input[name="email"]', 'testuser@example.com');
-        await page.fill('input[name="password"]', 'securePassword123');
-        await page.click('button[type="submit"]');
-
-        // Ensure user is redirected to dashboard
-        await expect(page).toHaveURL('http://localhost:3000/dashboard');
-
-        // Optionally, check for login success indicator, e.g., dashboard welcome message
-    });
+  test('User receives error message for invalid login attempts', async ({ page }) => {
+    await page.goto('http://localhost:3000/login');
+    await page.fill('input[name="email"]', 'invaliduser@example.com');
+    await page.fill('input[name="password"]', 'WrongPassword');
+    await page.click('button[type="submit"]');
+    
+    // Assert error message is displayed
+    await expect(page.locator('text=Invalid email or password')).toBeVisible();
+  });
 });
 
 test.describe('Create Visual Workflow', () => {
-    test('User can create and save a visual workflow', async ({ page }) => {
-        await page.goto('http://localhost:3000/dashboard');
-        
-        // Navigate to the workflow creation page
-        await page.click('button#create-workflow');
-
-        // Drag and drop tasks into the visual builder
-        await page.dragAndDrop('.task-item[data-task="task1"]', '.workflow-builder');
-        await page.dragAndDrop('.task-item[data-task="task2"]', '.workflow-builder');
-
-        // Connect tasks to define dependencies
-        await page.click('.workflow-builder .task[data-task="task1"]');
-        await page.click('.workflow-builder .task[data-task="task2"]');
-
-        // Save and name the workflow
-        await page.fill('input[name="workflow-name"]', 'My First Workflow');
-        await page.click('button#save-workflow');
-
-        // Ensure workflow is saved
-        await expect(page.locator('.workflow-list')).toContainText('My First Workflow');
-    });
+  test('User can create a visual workflow for AI agents', async ({ page }) => {
+    await page.goto('http://localhost:3000/dashboard');
+    
+    // Open workflow builder
+    await page.click('text=Create Workflow');
+    
+    // Drag and drop tasks
+    await page.dragAndDrop('text=Task 1', 'div#workflow-builder');
+    await page.dragAndDrop('text=Task 2', 'div#workflow-builder');
+    
+    // Connect tasks
+    await page.click('text=Task 1');
+    await page.click('text=Connect to Task 2');
+    
+    // Save and name the workflow
+    await page.fill('input[name="workflowName"]', 'My First Workflow');
+    await page.click('button[type="submit"]');
+    
+    // Assert success message
+    await expect(page.locator('text=Workflow saved successfully')).toBeVisible();
+  });
 });
 
 test.describe('Automated Task Scheduling', () => {
-    test('User can automate scheduling for AI agents', async ({ page }) => {
-        await page.goto('http://localhost:3000/dashboard');
-
-        // Navigate to task scheduling section
-        await page.click('button#schedule-tasks');
-        
-        // Set task priorities and deadlines
-        await page.fill('.task[data-task="task1"] input[name="priority"]', 'High');
-        await page.fill('.task[data-task="task1"] input[name="deadline"]', '2023-12-31');
-
-        // Generate schedule
-        await page.click('button#generate-schedule');
-
-        // Check for success message or scheduled items
-        await expect(page).toContainText('Schedule generated successfully');
-    });
+  test('User can automate scheduling for AI agents', async ({ page }) => {
+    await page.goto('http://localhost:3000/dashboard');
+    
+    // Navigate to scheduling section
+    await page.click('text=Task Scheduling');
+    
+    // Set up task details
+    await page.fill('input[name="taskName"]', 'Task A');
+    await page.fill('input[name="deadline"]', '2023-12-31');
+    await page.selectOption('select[name="priority"]', 'High');
+    await page.click('button[type="submit"]');
+    
+    // Assert schedule generation
+    await expect(page.locator('text=Schedule generated successfully')).toBeVisible();
+  });
 });
 
 test.describe('Integrate with AI Tools', () => {
-    test('User can integrate AgentFlow with AI tools', async ({ page }) => {
-        await page.goto('http://localhost:3000/dashboard');
+  test('User can integrate AgentFlow with AI tools', async ({ page }) => {
+    await page.goto('http://localhost:3000/dashboard');
+    
+    // Connect TensorFlow account
+    await page.click('text=Integrations');
+    await page.fill('input[name="tensorflowAccount"]', 'tensorflow_user');
+    await page.click('button[type="submit"]');
 
-        // Navigate to integrations section
-        await page.click('button#integrate-tools');
+    // Assert TensorFlow connection success
+    await expect(page.locator('text=Connected to TensorFlow')).toBeVisible();
 
-        // Connect TensorFlow account
-        await page.fill('input[name="tensorflow-email"]', 'tfuser@example.com');
-        await page.fill('input[name="tensorflow-password"]', 'tfPassword123');
-        await page.click('button#connect-tensorflow');
+    // Connect OpenAI API account
+    await page.fill('input[name="openAIAccount"]', 'openai_user');
+    await page.click('button[type="submit"]');
 
-        // Connect OpenAI API account
-        await page.fill('input[name="openai-api-key"]', 'sk-12345');
-        await page.click('button#connect-openai');
-
-        // Check for success indicators
-        await expect(page).toContainText('Successfully connected to TensorFlow and OpenAI');
-    });
+    // Assert OpenAI connection success
+    await expect(page.locator('text=Connected to OpenAI API')).toBeVisible();
+  });
 });
 
 test.describe('Receive Real-Time Notifications', () => {
-    test('User receives notifications on agent statuses', async ({ page }) => {
-        await page.goto('http://localhost:3000/dashboard');
+  test('User receives notifications for agent statuses', async ({ page }) => {
+    await page.goto('http://localhost:3000/dashboard');
 
-        // Check for notifications settings
-        await page.click('button#notification-settings');
-        
-        // Customize notification settings
-        await page.check('input[name="task-completion"]');
-        await page.check('input[name="error-alerts"]');
-        await page.click('button#save-notifications');
-
-        // Simulate a task completion (this part would depend on your setup)
-        await page.click('button#simulate-task-completion');
-
-        // Check for received notifications
-        await expect(page.locator('.notification')).toContainText('Task completed successfully');
-    });
+    // Assume there are notifications already setup in the system
+    await page.click('text=Notifications');
+    
+    // Assert that user receives notifications
+    await expect(page.locator('text=Task A completed')).toBeVisible();
+    await expect(page.locator('text=Task B encountered an error')).toBeVisible();
+  });
 });
 
 test.describe('User-Friendly Dashboard', () => {
-    test('Dashboard displays list of all agents with current statuses', async ({ page }) => {
-        await page.goto('http://localhost:3000/dashboard');
-
-        // Confirm that agents are listed
-        const agents = await page.locator('.agent-list .agent');
-        const agentsCount = await agents.count();
-        
-        expect(agentsCount).toBeGreaterThan(0);
-
-        // Check filtering functionalities
-        await page.selectOption('select#filter', 'project1'); // Example of filtering
-        await expect(page.locator('.agent-list')).toContainText('project1');
-    });
+  test('Dashboard displays a list of all agents with current statuses', async ({ page }) => {
+    await page.goto('http://localhost:3000/dashboard');
+    
+    // Assert dashboard displays agents
+    await expect(page.locator('text=Agent 1')).toBeVisible();
+    await expect(page.locator('text=Agent 2')).toBeVisible();
+    
+    // Click on an agent for detailed view
+    await page.click('text=Agent 1');
+    
+    // Assert detailed view is displayed
+    await expect(page).toHaveURL(/\/agent\/1$/);
+  });
 });
