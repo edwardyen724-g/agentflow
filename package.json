@@ -48,5 +48,8 @@
   },
   "tailwindcss": {
     "config": "./tailwind.config.js"
-  }
+  },
+  "sensitiveEnv": [
+    "STRIPE_SECRET_KEY"
+  ]
 }
