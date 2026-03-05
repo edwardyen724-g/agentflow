@@ -1,8 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, getDocs } from 'firebase/firestore';
+import * as admin from 'firebase-admin';
 
-// Validate environment variables
 if (!process.env.FIREBASE_API_KEY || !process.env.FIREBASE_AUTH_DOMAIN || !process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_STORAGE_BUCKET || !process.env.FIREBASE_MESSAGING_SENDER_ID || !process.env.FIREBASE_APP_ID) {
   throw new Error('Missing Firebase configuration environment variables');
 }
@@ -51,7 +51,6 @@ export default async function handler(req: AuthedRequest, res: NextApiResponse) 
     return res.status(200).json(agents);
   } catch (error) {
     console.error('Error fetching agents:', error);
-    const message = error instanceof Error ? error.message : 'Internal Server Error';
-    return res.status(500).json({ message: `Failed to fetch agents: ${message}` });
+    return res.status(500).json({ message: 'Failed to fetch agents: An internal server error occurred.' });
   }
 }
