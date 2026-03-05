@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import * as admin from "firebase-admin";
 import db from "../../../lib/firestore";
+import validator from 'validator';
 
 // Ensure admin is initialised (lib/firestore.ts handles this as a side-effect)
 void db;
@@ -23,6 +24,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (!email || !password) {
     return res.status(400).json({ error: "Email and password are required" });
+  }
+
+  if (!validator.isEmail(email)) {
+    return res.status(400).json({ error: "Invalid email format" });
   }
 
   if (!isPasswordStrong(password)) {
