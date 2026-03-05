@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import * as admin from "firebase-admin";
 import db from "../../../lib/firestore";
+import validator from 'validator';
 
 void db; // ensures firebase-admin is initialised
 
@@ -38,6 +39,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    if (!validator.isJWT(idToken)) {
+      return res.status(400).json({ message: "Invalid token format" });
+    }
     // Client signs in with Firebase client SDK, sends the ID token here for verification
     const decoded = await admin.auth().verifyIdToken(idToken);
     return res.status(200).json({ uid: decoded.uid, email: decoded.email });
