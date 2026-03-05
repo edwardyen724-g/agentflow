@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Auth, firebase } from 'firebase/auth';
 import 'tailwindcss/tailwind.css';
+import { toast } from 'react-toastify';
 
 const SignupPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -30,7 +31,7 @@ const SignupPage: React.FC = () => {
       await auth.createUserWithEmailAndPassword(email, password);
       router.push('/dashboard'); // Redirect to dashboard after signup
     } catch (err) {
-      setError('An error occurred during signup. Please try again.');
+      toast.error('An error occurred during signup. Please check your credentials and try again.');
     } finally {
       setLoading(false);
     }
@@ -50,7 +51,6 @@ const SignupPage: React.FC = () => {
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required
             />
           </div>
           <div className="mb-4">
@@ -61,10 +61,9 @@ const SignupPage: React.FC = () => {
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required
             />
           </div>
-          <button type="submit" className="w-full bg-blue-500 text-white p-2 rounded-md">{loading ? 'Loading...' : 'Sign Up'}</button>
+          <button type="submit" className="w-full p-2 bg-blue-500 text-white rounded">Sign Up</button>
         </form>
       </div>
     </div>
