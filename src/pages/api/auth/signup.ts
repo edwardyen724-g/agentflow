@@ -2,7 +2,6 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import firebase from 'firebase/app';
 import 'firebase/auth';
 
-// Initialize Firebase
 if (!firebase.apps.length) {
   firebase.initializeApp({
     apiKey: process.env.FIREBASE_API_KEY,
@@ -14,12 +13,7 @@ if (!firebase.apps.length) {
   });
 }
 
-type Data = {
-  message?: string;
-  error?: string;
-};
-
-export default async function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -30,10 +24,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     return res.status(400).json({ error: 'Email and password are required' });
   }
 
+  const isPasswordStrong = (password: string): boolean => {
+    return password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /[0-9]/.test(password);
+  };
+
+  if (!isPasswordStrong(password)) {
+    return res.status(400).json({ error: 'Password must be at least 8 characters long and include uppercase letters, lowercase letters, and numbers.' });
+  }
+
   try {
     const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
     return res.status(201).json({ message: 'User created successfully', uid: userCredential.user.uid });
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: 'An error occurred during signup. Please try again.' });
   }
 }
