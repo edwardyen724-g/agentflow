@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import * as admin from "firebase-admin";
 import db from "../../../lib/firestore";
-import validator from 'validator';
+import { NextCors } from 'nextjs-cors';
 
 void db; // ensures firebase-admin is initialised
 
@@ -27,6 +27,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ message: "Method Not Allowed" });
   }
 
+  await NextCors(req, res, {
+    methods: ['POST'],
+    origin: '*',
+    optionsSuccessStatus: 200,
+  });
+
   const ip = (req.headers["x-forwarded-for"] as string) ?? req.socket.remoteAddress ?? "unknown";
   if (!checkRateLimit(ip)) {
     return res.status(429).json({ message: "Too many login attempts. Please try again later." });
@@ -39,15 +45,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    if (!validator.isJWT(idToken)) {
-      return res.status(400).json({ message: "Invalid token format" });
-    }
-    // Client signs in with Firebase client SDK, sends the ID token here for verification
     const decoded = await admin.auth().verifyIdToken(idToken);
     return res.status(200).json({ uid: decoded.uid, email: decoded.email });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Login failed";
-    console.error("Login verification error:", message);
+    console.error("Login verification error:", err);
     return res.status(401).json({ message: "Invalid or expired token." });
   }
 }
