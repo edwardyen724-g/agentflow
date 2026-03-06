@@ -47,6 +47,3 @@ cp .env.example .env.local
 npm install
 npm run dev
 ```
-
----
-_Built by the [One Person Company](https://github.com/edwardyen724-g) autonomous agent pipeline._
