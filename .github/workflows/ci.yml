@@ -15,8 +15,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
       - run: npm install --legacy-peer-deps
-      - name: Generate next-env.d.ts
-        run: npx next info 2>/dev/null || true; test -f next-env.d.ts || cp node_modules/next/next-env.d.ts . 2>/dev/null || echo '/// <reference types="next" />' > next-env.d.ts
+      - name: Ensure next-env.d.ts exists
+        run: test -f next-env.d.ts || echo '/// <reference types="next" />' > next-env.d.ts
       - run: npx tsc --noEmit
