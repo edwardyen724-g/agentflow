@@ -1,9 +1,9 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import * as admin from "firebase-admin";
-import db from "../../../lib/firestore";
-import type { Workflow } from "../../../types";
+import db from "../../lib/firestore";
+import type { Workflow } from "../../types";
 
-const firestore = db.firestore();
+const firestore = db;
 
 interface AuthedRequest extends NextApiRequest {
   userId?: string;
