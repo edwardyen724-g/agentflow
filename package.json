@@ -2,54 +2,31 @@
   "name": "agentflow",
   "version": "1.0.0",
   "description": "Streamline your AI agents' tasks and schedules with ease.",
-  "main": "index.js",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint .",
-    "format": "prettier --write .",
-    "test": "jest"
+    "lint": "next lint"
   },
-  "keywords": [
-    "AI",
-    "agents",
-    "workflow",
-    "scheduling",
-    "data-science"
-  ],
-  "author": "Your Name",
-  "license": "ISC",
   "dependencies": {
-    "firebase": "^9.0.0",
-    "stripe": "^8.0.0",
-    "react": "^18.0.0",
     "next": "14.0.0",
-    "tailwindcss": "^2.0.0"
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "firebase": "^10.0.0",
+    "firebase-admin": "^12.0.0",
+    "reactfire": "^4.0.0",
+    "react-hot-toast": "^2.4.0",
+    "stripe": "^14.0.0",
+    "tailwindcss": "^3.0.0",
+    "autoprefixer": "^10.0.0",
+    "postcss": "^8.0.0"
   },
   "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "@types/node": "^20.0.0",
     "eslint": "^8.0.0",
-    "prettier": "^2.0.0",
-    "jest": "^27.0.0"
-  },
-  "jest": {
-    "preset": "ts-jest",
-    "testEnvironment": "node"
-  },
-  "browserslist": [
-    "last 2 versions",
-    "> 0.2%",
-    "not dead"
-  ],
-  "eslintConfig": {
-    "extends": [
-      "next/core-web-vitals"
-    ]
-  },
-  "tailwindcss": {
-    "config": "./tailwind.config.js"
-  },
-  "sensitiveEnv": [
-    "STRIPE_SECRET_KEY"
-  ]
+    "eslint-config-next": "14.0.0"
+  }
 }
